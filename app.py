@@ -1,5 +1,14 @@
 import os
 import streamlit as st
+import os
+
+# Ensure Streamlit listens on the correct port and address for Elastic Beanstalk
+if 'PORT' in os.environ:
+    port = int(os.environ['PORT'])
+else:
+    port = 8080
+os.environ['STREAMLIT_SERVER_PORT'] = str(port)
+os.environ['STREAMLIT_SERVER_ADDRESS'] = '0.0.0.0'
 from langchain.agents import initialize_agent, Tool
 from langchain_community.llms import OpenAI
 from langchain_community.utilities import GoogleSearchAPIWrapper
