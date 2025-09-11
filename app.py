@@ -3,25 +3,29 @@ import os
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.utilities import GoogleSearchAPIWrapper
+from dotenv import load_dotenv
 
-# Set up Streamlit UI
+
+# Load environment variables from .env
+load_dotenv()
+
 st.set_page_config(page_title="Condemnify", layout="wide")
 st.title("Condemnify: Who Condemned It?")
 
-# Get OpenAI API key from user input or environment
-openai_api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+# Get OpenAI API key from .env or sidebar
+openai_api_key = os.getenv("OPENAI_API_KEY") or st.sidebar.text_input("Enter your OpenAI API Key", type="password")
 if not openai_api_key:
-    st.warning("Please enter your OpenAI API key in the sidebar.")
+    st.warning("Please enter your OpenAI API key in the sidebar or .env file.")
     st.stop()
 
 # Set up LangChain LLM
 llm = OpenAI(openai_api_key=openai_api_key, temperature=0.2)
 
-# Set up Google Search API (requires API key and CX)
-google_api_key = st.sidebar.text_input("Google API Key", type="password")
-google_cx = st.sidebar.text_input("Google Custom Search CX")
+# Get Google API key and CX from .env or sidebar
+google_api_key = os.getenv("GOOGLE_API_KEY") or st.sidebar.text_input("Google API Key", type="password")
+google_cx = os.getenv("GOOGLE_CSE_ID") or st.sidebar.text_input("Google Custom Search CX")
 if not google_api_key or not google_cx:
-    st.warning("Please enter your Google API Key and CX in the sidebar.")
+    st.warning("Please enter your Google API Key and CX in the sidebar or .env file.")
     st.stop()
 
 search = GoogleSearchAPIWrapper(google_api_key=google_api_key, google_cse_id=google_cx)
