@@ -1,10 +1,15 @@
-import streamlit as st
 import os
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
+
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
+import streamlit as st
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.utilities import GoogleSearchAPIWrapper
 from dotenv import load_dotenv
-
 
 # Load environment variables from .env
 load_dotenv()
