@@ -1,4 +1,7 @@
 streamlit
 langchain
+langchain-community
 openai
 requests
+python-dotenv
+google-search-results
