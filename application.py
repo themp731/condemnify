@@ -52,9 +52,24 @@ def truncate_to_words(text, max_words=100):
 def find_recent_events():
     query = "recent acts of violence, extremism, or criminality in the United States"
     results = search.run(query)
-    # Return the top 10 results as events and truncate each to 100 words
-    events = results.split("\n")[:10]
-    return [truncate_to_words(event) for event in events if event.strip()]
+    # Split results into lines and take the top 10
+    events = [line.strip() for line in results.split("\n") if line.strip()][:10]
+    event_list = []
+    for event in events:
+        # Extract headline: first sentence, max 100 words
+        if '.' in event:
+            headline = event.split('.')[0]
+        else:
+            headline = event
+        # Limit headline to 100 words
+        words = headline.split()
+        if len(words) > 100:
+            headline = ' '.join(words[:100])
+        event_list.append({
+            "headline": headline,
+            "full_text": event
+        })
+    return event_list
 
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
@@ -79,7 +94,22 @@ if st.button("Find Recent Events"):
     if demo_mode:
         demo_path = os.path.join(os.path.dirname(__file__), "demo_data", "demo_events.csv")
         if os.path.exists(demo_path):
-            df = pd.read_csv(demo_path)
+            # Read demo data as plain text and split into events
+            with open(demo_path, encoding="utf-8") as f:
+                lines = f.readlines()
+            # Skip header
+            demo_events = [line.strip().split(',') for line in lines[1:] if line.strip()]
+            table_data = []
+            for row in demo_events:
+                if len(row) == 3:
+                    left, event, right = row
+                    table_data.append({
+                        "Left Condemned?": left,
+                        "Event Description": f"**{event}**",  # Make event a headline
+                        "Right Condemned?": right
+                    })
+            import pandas as pd
+            df = pd.DataFrame(table_data)
             st.subheader(f"Found {len(df)} Recent Events (Demo Mode)")
             st.table(df)
         else:
@@ -88,10 +118,12 @@ if st.button("Find Recent Events"):
         events = find_recent_events()
         left_results = []
         right_results = []
-        for event in events:
-            with st.spinner(f"Checking condemnation for: {event[:50]}..."):
-                left = check_condemnation(event, "left")
-                right = check_condemnation(event, "right")
+        for event_obj in events:
+            event_full_text = event_obj["full_text"]
+            event_headline = event_obj["headline"]
+            with st.spinner(f"Checking condemnation for: {event_headline[:50]}..."):
+                left = check_condemnation(event_full_text, "left")
+                right = check_condemnation(event_full_text, "right")
                 left_results.append(left)
                 right_results.append(right)
 
@@ -102,11 +134,14 @@ if st.button("Find Recent Events"):
         for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
             left_icon = "✔️" if "yes" in left_res.lower() else "❌"
             right_icon = "✔️" if "yes" in right_res.lower() else "❌"
+            # Use the headline for display
+            headline = event["headline"]
             table_data.append({
-                "Left Condemned?": left_icon,
-                "Event Description": event,
-                "Right Condemned?": right_icon
+            "Left Condemned?": left_icon,
+            "Event Description": f"**{headline}**",
+            "Right Condemned?": right_icon
             })
 
+        import pandas as pd
         df = pd.DataFrame(table_data)
         st.table(df)
