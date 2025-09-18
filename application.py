@@ -1,4 +1,5 @@
 import os
+import sys
 import streamlit as st
 import os
 
@@ -73,30 +74,39 @@ st.markdown(
 )
 
 if st.button("Find Recent Events"):
-    events = find_recent_events()
-    left_results = []
-    right_results = []
-    for event in events:
-        with st.spinner(f"Checking condemnation for: {event[:50]}..."):
-            left = check_condemnation(event, "left")
-            right = check_condemnation(event, "right")
-            left_results.append(left)
-            right_results.append(right)
-
-    st.subheader(f"Found {len(events)} Recent Events")
-
-    # Prepare data for table
-    table_data = []
-    for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
-        left_icon = "✔️" if "yes" in left_res.lower() else "❌"
-        right_icon = "✔️" if "yes" in right_res.lower() else "❌"
-        table_data.append({
-            "Left Condemned?": left_icon,
-            "Event Description": event,
-            "Right Condemned?": right_icon
-        })
-
-    # Display as a table
+    demo_mode = any("DEMO" in arg.upper() for arg in sys.argv)
     import pandas as pd
-    df = pd.DataFrame(table_data)
-    st.table(df)
+    if demo_mode:
+        demo_path = os.path.join(os.path.dirname(__file__), "demo_data", "demo_events.csv")
+        if os.path.exists(demo_path):
+            df = pd.read_csv(demo_path)
+            st.subheader(f"Found {len(df)} Recent Events (Demo Mode)")
+            st.table(df)
+        else:
+            st.error("Demo data file not found at demo_data/demo_events.csv.")
+    else:
+        events = find_recent_events()
+        left_results = []
+        right_results = []
+        for event in events:
+            with st.spinner(f"Checking condemnation for: {event[:50]}..."):
+                left = check_condemnation(event, "left")
+                right = check_condemnation(event, "right")
+                left_results.append(left)
+                right_results.append(right)
+
+        st.subheader(f"Found {len(events)} Recent Events")
+
+        # Prepare data for table
+        table_data = []
+        for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
+            left_icon = "✔️" if "yes" in left_res.lower() else "❌"
+            right_icon = "✔️" if "yes" in right_res.lower() else "❌"
+            table_data.append({
+                "Left Condemned?": left_icon,
+                "Event Description": event,
+                "Right Condemned?": right_icon
+            })
+
+        df = pd.DataFrame(table_data)
+        st.table(df)
