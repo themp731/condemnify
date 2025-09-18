@@ -38,21 +38,20 @@ if not google_api_key or not google_cx:
 
 search = GoogleSearchAPIWrapper(google_api_key=google_api_key, google_cse_id=google_cx)
 
+# Helper function to truncate text to 100 words
+def truncate_to_words(text, max_words=100):
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    return ' '.join(words[:max_words]) + '...'
+
 # Agent 1: Find recent acts of violence, extremism, criminality, or misdeeds in the US
 def find_recent_events():
     query = "recent acts of violence, extremism, or criminality in the United States"
     results = search.run(query)
-    # For demo, just return the top 10 results as events
-    return results.split("\n")[:10]
-
-def truncate_to_100_words(text):
-    """Truncate text to maximum 100 words"""
-    if not text:
-        return text
-    words = text.split()
-    if len(words) <= 100:
-        return text
-    return " ".join(words[:100]) + "..."
+    # Return the top 10 results as events and truncate each to 100 words
+    events = results.split("\n")[:10]
+    return [truncate_to_words(event) for event in events if event.strip()]
 
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
@@ -72,45 +71,41 @@ if st.button("Find Recent Events"):
     left_results = []
     right_results = []
     for event in events:
-        with st.spinner(f"Checking condemnation for: {event}"):
+        with st.spinner(f"Checking condemnation for: {event[:50]}..."):
             left = check_condemnation(event, "left")
             right = check_condemnation(event, "right")
             left_results.append(left)
             right_results.append(right)
     
-    # Display results in table format with multiple rows
-    st.subheader("Recent Events and Condemnation Status")
+    # Display results in a table-like format with proper row separation
+    st.subheader(f"Found {len(events)} Recent Events")
     
+    # Create header row
+    col1, col2, col3 = st.columns([1,2,1])
+    with col1:
+        st.write("**Left Condemned?**")
+    with col2:
+        st.write("**Event Description**")
+    with col3:
+        st.write("**Right Condemned?**")
+    
+    st.divider()
+    
+    # Display each event as a row
     for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
-        # Create a container for each row
-        with st.container():
-            # Create three columns for each event row
-            col1, col2, col3 = st.columns([2, 4, 2])
-            
-            with col1:
-                if i == 0:  # Only show header for first row
-                    st.markdown("**Left Condemned?**")
-                left_icon = "✔️" if "yes" in left_res.lower() else "❌"
-                st.write(f"{left_icon}")
-                with st.expander("Details"):
-                    st.caption(left_res)
-            
-            with col2:
-                if i == 0:  # Only show header for first row
-                    st.markdown("**Event Description**")
-                truncated_event = truncate_to_100_words(event)
-                st.write(truncated_event)
-            
-            with col3:
-                if i == 0:  # Only show header for first row
-                    st.markdown("**Right Condemned?**")
-                right_icon = "✔️" if "yes" in right_res.lower() else "❌"
-                st.write(f"{right_icon}")
-                with st.expander("Details"):
-                    st.caption(right_res)
+        col1, col2, col3 = st.columns([1,2,1])
+        with col1:
+            st.write("✔️" if "yes" in left_res.lower() else "❌")
+            with st.expander("Details"):
+                st.caption(left_res)
+        with col2:
+            st.write(f"**Event {i+1}:** {event}")
+        with col3:
+            st.write("✔️" if "yes" in right_res.lower() else "❌")
+            with st.expander("Details"):
+                st.caption(right_res)
         
-        # Add a divider between rows (except for the last row)
-        if i < len(events) - 1:
+        if i < len(events) - 1:  # Don't add divider after last row
             st.divider()
 
 st.info("To deploy on Elastic Beanstalk, make sure to set your API keys as environment variables or use the sidebar inputs.")
