@@ -53,14 +53,6 @@ def find_recent_events():
     events = results.split("\n")[:10]
     return [truncate_to_words(event) for event in events if event.strip()]
 
-def truncate_to_100_words(text):
-    if not text:
-        return text
-    words = text.split()
-    if len(words) <= 100:
-        return text
-    return " ".join(words[:100]) + "..."
-
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
     # side: "left" or "right"
@@ -84,6 +76,7 @@ if st.button("Find Recent Events"):
             right = check_condemnation(event, "right")
             left_results.append(left)
             right_results.append(right)
+    
     # Display results in a table-like format with proper row separation
     st.subheader(f"Found {len(events)} Recent Events")
     
