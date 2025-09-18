@@ -82,34 +82,21 @@ if st.button("Find Recent Events"):
             right = check_condemnation(event, "right")
             left_results.append(left)
             right_results.append(right)
-    
-    # Display results in a table-like format with proper row separation
+
     st.subheader(f"Found {len(events)} Recent Events")
-    
-    # Create header row
-    col1, col2, col3 = st.columns([1,2,1])
-    with col1:
-        st.write("**Left Condemned?**")
-    with col2:
-        st.write("**Event Description**")
-    with col3:
-        st.write("**Right Condemned?**")
-    
-    st.divider()
-    
-    # Display each event as a row
+
+    # Prepare data for table
+    table_data = []
     for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
-        col1, col2, col3 = st.columns([1,2,1])
-        with col1:
-            st.write("✔️" if "yes" in left_res.lower() else "❌")
-            with st.expander("Details"):
-                st.caption(left_res)
-        with col2:
-            st.write(f"**Event {i+1}:** {event}")
-        with col3:
-            st.write("✔️" if "yes" in right_res.lower() else "❌")
-            with st.expander("Details"):
-                st.caption(right_res)
-        
-        if i < len(events) - 1:  # Don't add divider after last row
-            st.divider()
+        left_icon = "✔️" if "yes" in left_res.lower() else "❌"
+        right_icon = "✔️" if "yes" in right_res.lower() else "❌"
+        table_data.append({
+            "Left Condemned?": left_icon,
+            "Event Description": event,
+            "Right Condemned?": right_icon
+        })
+
+    # Display as a table
+    import pandas as pd
+    df = pd.DataFrame(table_data)
+    st.table(df)
