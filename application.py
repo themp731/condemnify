@@ -54,7 +54,7 @@ def find_recent_events():
     results = search.run(query)
     # Use LLM to extract 10 event headlines from the search result
     prompt = (
-        "Extract 10 distinct recent events (acts of violence, extremism, or criminality) in the United States from the following text. "
+        "Extract 10 distinct recent events within the past 10 days (acts of violence, extremism, or criminality) in the United States from the following text. "
         "For each event, return a concise headline (less than 25 words) and a detailed description. "
         "Format your response as a numbered list: '1. Headline: ... Description: ...'"
         f"\nText: {results}"
