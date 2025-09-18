@@ -38,12 +38,20 @@ if not google_api_key or not google_cx:
 
 search = GoogleSearchAPIWrapper(google_api_key=google_api_key, google_cse_id=google_cx)
 
+# Helper function to truncate text to 100 words
+def truncate_to_words(text, max_words=100):
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    return ' '.join(words[:max_words]) + '...'
+
 # Agent 1: Find recent acts of violence, extremism, criminality, or misdeeds in the US
 def find_recent_events():
     query = "recent acts of violence, extremism, or criminality in the United States"
     results = search.run(query)
-    # For demo, just return the top 5 results as events
-    return results.split("\n")[:5]
+    # Return the top 10 results as events and truncate each to 100 words
+    events = results.split("\n")[:10]
+    return [truncate_to_words(event) for event in events if event.strip()]
 
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
@@ -63,26 +71,41 @@ if st.button("Find Recent Events"):
     left_results = []
     right_results = []
     for event in events:
-        with st.spinner(f"Checking condemnation for: {event}"):
+        with st.spinner(f"Checking condemnation for: {event[:50]}..."):
             left = check_condemnation(event, "left")
             right = check_condemnation(event, "right")
             left_results.append(left)
             right_results.append(right)
-    # Display results in three columns
+    
+    # Display results in a table-like format with proper row separation
+    st.subheader(f"Found {len(events)} Recent Events")
+    
+    # Create header row
     col1, col2, col3 = st.columns([1,2,1])
     with col1:
-        st.subheader("Left Condemned?")
-        for res in left_results:
-            st.write("✔️" if "yes" in res.lower() else "❌")
-            st.caption(res)
+        st.write("**Left Condemned?**")
     with col2:
-        st.subheader("Event")
-        for event in events:
-            st.write(event)
+        st.write("**Event Description**")
     with col3:
-        st.subheader("Right Condemned?")
-        for res in right_results:
-            st.write("✔️" if "yes" in res.lower() else "❌")
-            st.caption(res)
+        st.write("**Right Condemned?**")
+    
+    st.divider()
+    
+    # Display each event as a row
+    for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
+        col1, col2, col3 = st.columns([1,2,1])
+        with col1:
+            st.write("✔️" if "yes" in left_res.lower() else "❌")
+            with st.expander("Details"):
+                st.caption(left_res)
+        with col2:
+            st.write(f"**Event {i+1}:** {event}")
+        with col3:
+            st.write("✔️" if "yes" in right_res.lower() else "❌")
+            with st.expander("Details"):
+                st.caption(right_res)
+        
+        if i < len(events) - 1:  # Don't add divider after last row
+            st.divider()
 
 st.info("To deploy on Elastic Beanstalk, make sure to set your API keys as environment variables or use the sidebar inputs.")
