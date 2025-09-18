@@ -52,24 +52,31 @@ def truncate_to_words(text, max_words=100):
 def find_recent_events():
     query = "recent acts of violence, extremism, or criminality in the United States"
     results = search.run(query)
-    # Split results into lines and take the top 10
-    events = [line.strip() for line in results.split("\n") if line.strip()][:10]
+    # Use LLM to extract 10 event headlines from the search result
+    prompt = (
+        "Extract 10 distinct recent events (acts of violence, extremism, or criminality) in the United States from the following text. "
+        "For each event, return a concise headline (less than 100 words) and a short description. "
+        "Format your response as a numbered list: '1. Headline: ... Description: ...'"
+        f"\nText: {results}"
+    )
+    llm_response = llm(prompt)
+    # Parse the LLM response into event objects
+    import re
     event_list = []
-    for event in events:
-        # Extract headline: first sentence, max 100 words
-        if '.' in event:
-            headline = event.split('.')[0]
-        else:
-            headline = event
-        # Limit headline to 100 words
-        words = headline.split()
-        if len(words) > 100:
-            headline = ' '.join(words[:100])
-        event_list.append({
-            "headline": headline,
-            "full_text": event
-        })
-    return event_list
+    for match in re.finditer(r"\d+\.\s*Headline:\s*(.+?)\s*Description:\s*(.+?)(?=\d+\.|$)", llm_response, re.DOTALL):
+        headline = match.group(1).strip()
+        description = match.group(2).strip()
+        event_list.append({"headline": headline, "full_text": description})
+    # If less than 10 events, fallback to previous logic
+    if len(event_list) < 10:
+        events = [line.strip() for line in results.split("\n") if line.strip()][:10]
+        for event in events:
+            headline = event.split('.')[0] if '.' in event else event
+            words = headline.split()
+            if len(words) > 100:
+                headline = ' '.join(words[:100])
+            event_list.append({"headline": headline, "full_text": event})
+    return event_list[:10]
 
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
