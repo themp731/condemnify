@@ -55,7 +55,7 @@ def find_recent_events():
     # Use LLM to extract 10 event headlines from the search result
     prompt = (
         "Extract 10 distinct recent events (acts of violence, extremism, or criminality) in the United States from the following text. "
-        "For each event, return a concise headline (less than 100 words) and a short description. "
+        "For each event, return a concise headline (less than 25 words) and a detailed description. "
         "Format your response as a numbered list: '1. Headline: ... Description: ...'"
         f"\nText: {results}"
     )
@@ -84,9 +84,14 @@ def check_condemnation(event, side):
     query = f"Did {side} wing leaders condemn {event}?"
     result = search.run(query)
     # Use LLM to summarize if condemnation is found
-    prompt = f"Based on the following search result, did the {side} condemn the event '{event}'? Answer 'yes' or 'no' and provide a short explanation.\nSearch result: {result}"
+    prompt = (
+        f"Based on the following search result, did the {side} condemn the event '{event}'? "
+        "Respond with ONLY 'yes' or 'no' as the first word, followed by a short explanation.\n"
+        f"Search result: {result}"
+    )
     answer = llm(prompt)
-    return answer
+    # Ensure answer starts with yes/no and return full answer
+    return answer.strip()
 
 # Main app logic
 st.write("This app shows whether leadership from the Left or Right has condemned recent acts of violence or misdeeds in the US.")
@@ -139,14 +144,16 @@ if st.button("Find Recent Events"):
         # Prepare data for table
         table_data = []
         for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
-            left_icon = "✔️" if "yes" in left_res.lower() else "❌"
-            right_icon = "✔️" if "yes" in right_res.lower() else "❌"
-            # Use the headline for display
-            headline = event["headline"]
+            left_first = left_res.strip().split()[0].lower() if left_res.strip() else ""
+            right_first = right_res.strip().split()[0].lower() if right_res.strip() else ""
+            left_icon = "✔️" if left_first == "yes" else "❌"
+            right_icon = "✔️" if right_first == "yes" else "❌"
+            # Ensure headline is consistently bolded and strip stray asterisks
+            headline = event["headline"].strip('*').strip()
             table_data.append({
-            "Left Condemned?": left_icon,
-            "Event Description": f"**{headline}**",
-            "Right Condemned?": right_icon
+                "Left Condemned?": left_icon,
+                "Event Description": f"**{headline}**",
+                "Right Condemned?": right_icon
             })
 
         import pandas as pd
