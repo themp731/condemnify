@@ -84,5 +84,3 @@ if st.button("Find Recent Events"):
         for res in right_results:
             st.write("✔️" if "yes" in res.lower() else "❌")
             st.caption(res)
-
-st.info("To deploy on Elastic Beanstalk, make sure to set your API keys as environment variables or use the sidebar inputs.")
