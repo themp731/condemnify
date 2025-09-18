@@ -5,3 +5,4 @@ openai
 requests
 python-dotenv
 google-search-results
+google-api-python-client>=2.100.0
