@@ -42,8 +42,17 @@ search = GoogleSearchAPIWrapper(google_api_key=google_api_key, google_cse_id=goo
 def find_recent_events():
     query = "recent acts of violence, extremism, or criminality in the United States"
     results = search.run(query)
-    # For demo, just return the top 5 results as events
-    return results.split("\n")[:5]
+    # For demo, just return the top 10 results as events
+    return results.split("\n")[:10]
+
+def truncate_to_100_words(text):
+    """Truncate text to maximum 100 words"""
+    if not text:
+        return text
+    words = text.split()
+    if len(words) <= 100:
+        return text
+    return " ".join(words[:100]) + "..."
 
 # Agent 2: For each event, check if the Left or Right condemned it
 def check_condemnation(event, side):
@@ -68,19 +77,40 @@ if st.button("Find Recent Events"):
             right = check_condemnation(event, "right")
             left_results.append(left)
             right_results.append(right)
-    # Display results in three columns
-    col1, col2, col3 = st.columns([1,2,1])
-    with col1:
-        st.subheader("Left Condemned?")
-        for res in left_results:
-            st.write("✔️" if "yes" in res.lower() else "❌")
-            st.caption(res)
-    with col2:
-        st.subheader("Event")
-        for event in events:
-            st.write(event)
-    with col3:
-        st.subheader("Right Condemned?")
-        for res in right_results:
-            st.write("✔️" if "yes" in res.lower() else "❌")
-            st.caption(res)
+    
+    # Display results in table format with multiple rows
+    st.subheader("Recent Events and Condemnation Status")
+    
+    for i, (event, left_res, right_res) in enumerate(zip(events, left_results, right_results)):
+        # Create a container for each row
+        with st.container():
+            # Create three columns for each event row
+            col1, col2, col3 = st.columns([2, 4, 2])
+            
+            with col1:
+                if i == 0:  # Only show header for first row
+                    st.markdown("**Left Condemned?**")
+                left_icon = "✔️" if "yes" in left_res.lower() else "❌"
+                st.write(f"{left_icon}")
+                with st.expander("Details"):
+                    st.caption(left_res)
+            
+            with col2:
+                if i == 0:  # Only show header for first row
+                    st.markdown("**Event Description**")
+                truncated_event = truncate_to_100_words(event)
+                st.write(truncated_event)
+            
+            with col3:
+                if i == 0:  # Only show header for first row
+                    st.markdown("**Right Condemned?**")
+                right_icon = "✔️" if "yes" in right_res.lower() else "❌"
+                st.write(f"{right_icon}")
+                with st.expander("Details"):
+                    st.caption(right_res)
+        
+        # Add a divider between rows (except for the last row)
+        if i < len(events) - 1:
+            st.divider()
+
+st.info("To deploy on Elastic Beanstalk, make sure to set your API keys as environment variables or use the sidebar inputs.")
