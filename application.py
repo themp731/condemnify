@@ -6,7 +6,7 @@ import os
 if 'PORT' in os.environ:
     port = int(os.environ['PORT'])
 else:
-    port = 8080
+    port = 8000
 os.environ['STREAMLIT_SERVER_PORT'] = str(port)
 os.environ['STREAMLIT_SERVER_ADDRESS'] = '0.0.0.0'
 from langchain.agents import initialize_agent, Tool
